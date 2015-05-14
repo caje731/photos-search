@@ -6,10 +6,16 @@ from django.db import models
 
 class Location(models.Model):
 
+	LOCATION_TYPE_CHOICES = [
+								(1, 'Restaurant / Eatery'),
+								(2, 'Monument / Tourist Place')
+							]
+
 	# Mandatory details of the point of interest
 	name 	= models.CharField(blank=False, max_length=100)	# Gateway Of India
 	city 	= models.CharField(blank=False, max_length=20)	# Mumbai
 	country = models.CharField(blank=False, max_length=20)	# India
+	loc_type= models.IntegerField('Type', blank=False, choices=LOCATION_TYPE_CHOICES, default=2)
 
 	# Geographic Location
 	lat  	= models.DecimalField('latitude' , null=True, blank=False, max_digits=10, decimal_places=8)	# 18.921836
