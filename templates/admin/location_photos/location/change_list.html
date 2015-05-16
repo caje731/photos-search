@@ -16,7 +16,11 @@
       #changelist table thead th:first-child {width: inherit}
     </style>
   {% endif %}
-
+  <link rel="stylesheet" type="text/css" href="{% static 'location_photos/css/colorbox/colorbox.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'location_photos/css/bootstrap-3.3.2-dist/css/bootstrap.css' %}">
+  <script type="text/javascript" src="{% static 'location_photos/js/jquery/dist/jquery.js' %}"></script>
+  <script type="text/javascript" src="{% static 'location_photos/js/colorbox-master/jquery.colorbox.js' %}"></script>
+  <script type="text/javascript" src="{% static 'location_photos/css/bootstrap-3.3.2-dist/js/bootstrap.js' %}"></script>
   <style>
   	tbody tr{
   		cursor: pointer;
@@ -29,6 +33,43 @@
     	left:50%;
     	padding:2px;
 	}
+
+	.pic {	
+		cursor: pointer;
+	}
+	.scaled-image-container{
+		width: 600px;
+		height:100%;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.scaled-image-container >a:hover{
+		text-decoration: none;
+	}
+	.scaled-image-fit-width{
+		height: 600px;
+		width: 100%;
+	}
+
+	.pic_container{
+		padding: 5px;
+		margin: 5px;
+		width: 210px;
+		height: 210px;
+	}
+	.img-delete{
+		position: absolute;
+		top: 10px;
+		left: 190px;
+		visibility: hidden;
+		cursor: pointer;
+	}
+
+	#a_fetch_all_photos{
+		background-image: none;
+		padding-right: 10px;
+	}
   </style>
 {% endblock %}
 
@@ -38,14 +79,42 @@
 {% if action_form %}{% if actions_on_top or actions_on_bottom %}
 <script type="text/javascript">
 (function($) {
+
+	function getCookie(name) {
+		var cookieValue = null;
+		if (document.cookie && document.cookie != '') {
+			var cookies = document.cookie.split(';');
+			for (var i = 0; i < cookies.length; i++) {
+				var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+            	cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            	break;
+            }
+        }
+    }
+    	return cookieValue;
+	}
+
     $(document).ready(function($) {
         $("tr input.action-select").actions();
         $("tbody tr[class^=row]").click(function(){
-        	var id = $(this).children('.field-id').children('a').text();
-        	var bg = $(this).css('background');
+        	var id 	= $(this).children('.field-id').children('a').text();
+        	var bg 	= $(this).css('background');
         	var row = $(this);
+        	
+        	// Location details
+        	var loc_name = row.children('.field-name').text();
+        	var loc_city = row.children('.field-city').text();
+        	var loc_country = row.children('.field-country').text();
+        	var loc_full_name = loc_name.trim() + ', '+ loc_city.trim() + ', ' + loc_country.trim();  
+        	var loc_type = row.children('.field-loc_type').text();
+
+        	// Click effect
         	row.css('background', '#F3AE34');
         	setTimeout(function(){row.css('background', bg)}, 30);
+
+        	// Fetch photos
         	$.ajax({
             	url: "/location_photos/locations/"+id+"/photos",
             	type: 'GET',
@@ -55,7 +124,76 @@
                     }
                 })
         	.done(function(data, textStatus, jqXHR){
-            	console.log(data);
+        		if(data.error){
+        			var photos_container = $('#photos-container');
+        			photos_container.html('<p class="text-center">'+data.error+'</p>');
+        			return;
+        		}
+        		
+        		json =  JSON.parse(data);
+        		
+        		var photos_container = $('#photos-container');
+        		photos_container.html('');
+            	for (var i = 0; i < json.length; i++) {
+            		loc_photo = json[i].fields;
+            		// Insert a new image into the DOM
+            		var pic_id = id + '_' + json[i].pk; // location_id<underscore>pic_id 
+            		var pic_container = $("<div class='pic_container col-xs-12 col-sm-12 col-md-3' id='"+pic_id+"'></div>");
+            		var delbtn = $("<div class='img-delete'><span class='glyphicon glyphicon-remove' style='color:#FF0000;'></span>"+	
+									"</div>");
+            		var pic = $('<img class="pic" width="200" height="200" src="'+json[i].fields.link+'"></img>');
+            		pic_container.append(delbtn);
+            		pic_container.append(pic);
+            		photos_container.append(pic_container);
+
+            		// Attach handlers to it
+            		pic.click(function(){
+            			jQuery.colorbox({width:"60%", html: "<ul class='list-group'>"+
+  															"<li class='list-group-item row'>"+
+																"<!-- left padding filler -->"+
+																"<div class='col-xs-0 col-sm-0 col-md-3'></div>"+
+																
+																"<div class='col-xs-12 col-sm-12 col-md-6'>"+
+																	"<div class='scaled-image-container'>"+
+                                            							"<div class='thumbnail'>"+
+                                                							"<div class='caption text-center'>"+
+                                                    							"<p id=''></p>"+
+                                                							"</div>"+
+                                                							"<img src='"+loc_photo.link+"' alt='' class='scaled-image-fit-width'>"+
+                                                							"<div class='caption'>"+
+                                                    							"<h3>"+loc_full_name+"</h3>"+
+                                                    							"<p>"+loc_type+"</p>"+
+                                                    							"<p style='color:gray' class='small'>"+loc_photo.attribution+"</p>"+
+                                                							"</div>"+
+                                            							"</div>"+
+                                    								"</div>"+
+																"</div>"+
+
+																"<!-- right padding filler -->"+
+																"<div class='col-xs-0 col-sm-0 col-md-3'></div>"+
+															"</li>"+
+														"</ul>"
+						});  		
+            		});
+
+					pic_container.on('mouseover', function(){
+						$(this).children('.img-delete').css('visibility', 'visible');
+					});
+
+					pic_container.on('mouseout', function(){
+						$(this).children('.img-delete').css('visibility', 'hidden');
+					});
+
+					delbtn.on('click', function(){
+						var ids = $(this).parent().attr('id').split('_');
+						var loc_id = ids[0];
+						var pic_id = ids[1];
+
+						$("#delModalbtn").attr('loc_id', loc_id);
+						$("#delModalbtn").attr('pic_id', pic_id);
+						jQuery('#delModal').modal('show');
+					});
+            	};
         	})
         	.fail(function(jqXHR, textStatus, errorThrown){
             	alert('Failed: '+JSON.parse(jqXHR.responseText).msg);
@@ -64,6 +202,66 @@
            		$('#wait').css('display', 'none');
         	});
         });
+
+		$("#delModalbtn").click(function(){
+			var loc_id = $(this).attr('loc_id');
+			var pic_id = $(this).attr('pic_id');
+			jQuery('#delModal').modal('hide');
+
+			$.ajax({
+            	url: '/location_photos/locations/'+loc_id+'/photos/'+pic_id,
+            	type: 'DELETE',
+            	dataType: 'json',
+    			beforeSend: function(xhr){
+                	$('#wait').css('display', 'block');
+                	xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken"));
+            	}
+        	})
+			.done(function(data, textStatus, jqXHR){
+				alert('Photo Deleted !');
+				jQuery("#"+loc_id+"_"+pic_id).delete();
+			})
+			.fail(function(jqXHR, textStatus, errorThrown){
+				alert('Failed: '+JSON.parse(jqXHR.responseText).msg);
+			})
+			.always(function(){
+				$('#wait').css('display', 'none');
+			});
+		});
+
+		$("#a_fetch_all_photos").click(function(){
+			var modal_body = $("#photoSrchModal").find('.modal-body');
+			modal_body.html('<p>Streaming results from the search:</p>');
+			jQuery("#photoSrchModal").modal('show');
+			
+			var strmxhr = new XMLHttpRequest();
+			
+			strmxhr.open("PUT", "/location_photos/search/photos", true);
+			strmxhr.onreadystatechange = processReqChange;
+			strmxhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken"));
+			strmxhr.send("");
+
+			var delimiter_pos = -1;
+			function processReqChange() {
+				if (strmxhr.readyState == 3) {
+					// Make a copy of the input
+					var text = strmxhr.responseText;
+
+					//Search for the last instance of the eelimiter
+					var next_delim  = text.indexOf('|', delimiter_pos + 1);
+					if(next_delim != -1){
+						var new_chunk = text.substring(next_delim + 1);
+						if(new_chunk.length > 0 ){
+							delimiter_pos = next_delim;
+							modal_body.append($(new_chunk));
+						}
+					}
+				}
+				else if (strmxhr.readyState == 4) {
+					modal_body.append("<p class='text-primary'>Search Complete !</p>");
+				}
+			}        
+		});
     });
 })(django.jQuery);
 </script>
@@ -94,7 +292,7 @@
         <ul class="object-tools">
           {% block object-tools-items %}
           	<li>
-          		<a id="a_fetch_all_photos" class="addlink">{% trans "Fetch Photos" %}</a>
+          		<a id="a_fetch_all_photos" class="addlink" href="#">{% trans "Fetch Photos!" %}</a>
           	</li>
             <li>
               {% url cl.opts|admin_urlname:'add' as add_url %}
@@ -139,7 +337,43 @@
       </form>
     </div>
 
-    <div id="photos-container">
+    <div id="photos-container" class="row">
     </div>
   </div>
+
+
+<div class="modal fade" id="delModal" tabindex="-1" role="dialog" aria-labelledby="delModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="delModalLabel">Confirm Delete</h4>
+            </div>
+            <div class="modal-body">
+            	<p>Are you sure you want to delete this photo?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delModalbtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="photoSrchModal" tabindex="-1" role="dialog" aria-labelledby="photoSrchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="delModalLabel">Photo Search triggered...</h4>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
