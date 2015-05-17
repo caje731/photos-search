@@ -98,21 +98,25 @@ def stream_response_generator():
     	# If location is not a restaurant/pub, search images on Google also
     	if location.loc_type != 1:
 	    	response 	= gcs.search(q=full_name, num=(10-added_count))
-	    	for item in response['items']:
-	    		link 	= 	item['link']
-	    		title 	=  	item['title']
-	    		dplink	=	item['displayLink']
-	    		height	=	item['image']['height']
-	    		width	=	item['image']['width']
-	    		size 	= 	item['image']['byteSize']
+	    	if 'items' in response:
+		    	for item in response['items']:
+		    		link 	= 	item['link']
+		    		title 	=  	item['title']
+		    		dplink	=	item['displayLink']
+		    		height	=	item['image']['height']
+		    		width	=	item['image']['width']
+		    		size 	= 	item['image']['byteSize']
 
-	    		photo   =  Photo(link=link, attribution=dplink, title=title, location=location, height=height, width=width, bytes=size)
-	    		try:
-	    			photo.save()
-	    			added_count +=1
+		    		photo   =  Photo(link=link, attribution=dplink, title=title, location=location, height=height, width=width, bytes=size)
+		    		try:
+		    			photo.save()
+		    			added_count +=1
 
-	    		except IntegrityException, e:
-	    			failed_count+=1
+		    		except IntegrityException, e:
+		    			failed_count+=1
+			else:
+				print 'Google search failed for '+location.name
+				print response
 
     	yield "|<p>ID:%s %s \n" % (location.id, location.name)
     	yield "<span class='text-success'>Added :%s</span> <span class='text-warning'>Failed :%s</span></p>\n" % (added_count, failed_count)
