@@ -38,7 +38,6 @@
 		cursor: pointer;
 	}
 	.scaled-image-container{
-		width: 600px;
 		height:100%;
 		margin-left: auto;
 		margin-right: auto;
@@ -48,8 +47,8 @@
 		text-decoration: none;
 	}
 	.scaled-image-fit-width{
-		height: 600px;
-		width: 100%;
+		width: 600px !important;
+    height: 600px !important;
 	}
 
 	.pic_container{
@@ -107,7 +106,7 @@
         	var loc_name = row.children('.field-name').text();
         	var loc_city = row.children('.field-city').text();
         	var loc_country = row.children('.field-country').text();
-        	var loc_full_name = loc_name.trim() + ', '+ loc_city.trim() + ', ' + loc_country.trim();  
+        	var loc_full_name = loc_name.trim() + ' '+ loc_city.trim() + ' ' + loc_country.trim();  
         	var loc_type = row.children('.field-loc_type').text();
 
         	// Click effect
@@ -135,7 +134,7 @@
         		var photos_container = $('#photos-container');
         		photos_container.html('');
             	for (var i = 0; i < json.length; i++) {
-            		loc_photo = json[i].fields;
+            		var loc_photo = json[i].fields;
             		// Insert a new image into the DOM
             		var pic_id = id + '_' + json[i].pk; // location_id<underscore>pic_id 
             		var pic_container = $("<div class='pic_container col-xs-12 col-sm-12 col-md-3' id='"+pic_id+"'></div>");
@@ -147,53 +146,51 @@
             		photos_container.append(pic_container);
 
             		// Attach handlers to it
-            		pic.click(function(){
-            			jQuery.colorbox({width:"60%", html: "<ul class='list-group'>"+
-  															"<li class='list-group-item row'>"+
-																"<!-- left padding filler -->"+
-																"<div class='col-xs-0 col-sm-0 col-md-3'></div>"+
-																
-																"<div class='col-xs-12 col-sm-12 col-md-6'>"+
-																	"<div class='scaled-image-container'>"+
-                                            							"<div class='thumbnail'>"+
-                                                							"<div class='caption text-center'>"+
-                                                    							"<p id=''></p>"+
-                                                							"</div>"+
-                                                							"<img src='"+loc_photo.link+"' alt='' class='scaled-image-fit-width'>"+
-                                                							"<div class='caption'>"+
-                                                    							"<h3>"+loc_full_name+"</h3>"+
-                                                    							"<p>"+loc_type+"</p>"+
-                                                    							"<p style='color:gray' class='small'>"+loc_photo.attribution+"</p>"+
-                                                							"</div>"+
-                                            							"</div>"+
-                                    								"</div>"+
-																"</div>"+
+            		(function(loc_photo, loc_full_name){
+                  pic.click(function(){
+                  console.log(loc_photo);
+                  jQuery.colorbox({width:"80%", html: "<ul class='list-group'>"+
+                                "<li class='list-group-item row'>"+
+                                  "<div class='col-xs-12 col-sm-12 col-md-12'>"+
+                                    "<div class='scaled-image-container'>"+
+                                      "<div class='thumbnail'>"+
+                                        "<div class='caption text-center'>"+
+                                          "<p>"+loc_photo.title+"</p>"+
+                                        "</div>"+
+                                        "<img src='"+loc_photo.link+"' alt='"+loc_photo.title+"' class='scaled-image-fit-width'>"+
+                                        "<div class='caption text-center'>"+
+                                          "<h3>"+loc_full_name+"</h3>"+
+                                          "<p>"+loc_type+"</p>"+
+                                          "<p style='color:gray' class='small'>Original Dimensions (w x h) :"+loc_photo.width+" x "+loc_photo.height+"</p>"+
+                                          "<p style='color:gray' class='small'>"+loc_photo.attribution+"</p>"+
+                                        "</div>"+
+                                      "</div>"+
+                                    "</div>"+
+                                  "</div>"+
+                                "</li>"+
+                              "</ul>"
+                  });     
+                });
+                })(loc_photo, loc_full_name);
 
-																"<!-- right padding filler -->"+
-																"<div class='col-xs-0 col-sm-0 col-md-3'></div>"+
-															"</li>"+
-														"</ul>"
-						});  		
-            		});
+                pic_container.on('mouseover', function(){
+                  $(this).children('.img-delete').css('visibility', 'visible');
+                });
 
-					pic_container.on('mouseover', function(){
-						$(this).children('.img-delete').css('visibility', 'visible');
-					});
+                pic_container.on('mouseout', function(){
+                  $(this).children('.img-delete').css('visibility', 'hidden');
+                });
 
-					pic_container.on('mouseout', function(){
-						$(this).children('.img-delete').css('visibility', 'hidden');
-					});
+                delbtn.on('click', function(){
+                  var ids = $(this).parent().attr('id').split('_');
+                  var loc_id = ids[0];
+                  var pic_id = ids[1];
 
-					delbtn.on('click', function(){
-						var ids = $(this).parent().attr('id').split('_');
-						var loc_id = ids[0];
-						var pic_id = ids[1];
-
-						$("#delModalbtn").attr('loc_id', loc_id);
-						$("#delModalbtn").attr('pic_id', pic_id);
-						jQuery('#delModal').modal('show');
-					});
-            	};
+                  $("#delModalbtn").attr('loc_id', loc_id);
+                  $("#delModalbtn").attr('pic_id', pic_id);
+                  jQuery('#delModal').modal('show');
+                });
+            };
         	})
         	.fail(function(jqXHR, textStatus, errorThrown){
             	alert('Failed: '+JSON.parse(jqXHR.responseText).msg);
@@ -219,7 +216,7 @@
         	})
 			.done(function(data, textStatus, jqXHR){
 				alert('Photo Deleted !');
-				jQuery("#"+loc_id+"_"+pic_id).delete();
+				jQuery("#"+loc_id+"_"+pic_id).remove();
 			})
 			.fail(function(jqXHR, textStatus, errorThrown){
 				alert('Failed: '+JSON.parse(jqXHR.responseText).msg);

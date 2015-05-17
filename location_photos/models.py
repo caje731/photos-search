@@ -11,9 +11,9 @@ class Location(models.Model):
 								(2, 'Monument / Tourist Place')
 							]
 
-	# Mandatory details of the point of interest
+	# Details of the point of interest
 	name 	= models.CharField(blank=False, max_length=100)	# Gateway Of India
-	city 	= models.CharField(blank=False, max_length=20)	# Mumbai
+	city 	= models.CharField(blank=True, max_length=20)	# Mumbai
 	country = models.CharField(blank=False, max_length=20)	# India
 	loc_type= models.IntegerField('Type', blank=False, choices=LOCATION_TYPE_CHOICES, default=2)
 
@@ -37,12 +37,18 @@ class Location(models.Model):
 
 class Photo(models.Model):
 	
-	link 		= models.TextField(blank=False) 		# The web uri of the photo
-	attribution = models.TextField(blank=True) 			# The photo may need to be attributed to someone
-	is_deleted 	= models.BooleanField(default=False)	# If True, this photo should not be shown / used 
+	link 		= models.TextField(blank=False, unique=True) 		# The web uri of the photo
+	attribution = models.TextField(blank=True) 						# The photo may need to be attributed to someone
+	is_deleted 	= models.BooleanField(default=False)				# If True, this photo should not be shown / used
+	title		= models.TextField(blank=True) 
 	
 	# There can be one or more photos belonging to a location
 	location 	= models.ForeignKey(Location, related_name='photos', related_query_name='photo')
+
+	# Size
+	height 		= models.IntegerField(null=True)
+	width		= models.IntegerField(null=True)
+	bytes		= models.IntegerField(null=True)
 
 	# Timestamps
 	created_at	=	models.DateTimeField(auto_now_add=True) 

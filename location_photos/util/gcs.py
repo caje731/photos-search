@@ -52,11 +52,12 @@ def search(q=None, **kwargs):
 	kwargs['q'] 	= q
 	kwargs['key'] 	= apiconfig.GOOGLE_API_KEY
 	kwargs['cx']	= apiconfig.GOOGLE_CSE_ID
-	kwargs['searchType'] = 'image'
-	kwargs['imgSize'] = 'xlarge'
-	kwargs['num'] = 20
-	kwargs['rights'] = 'cc_attribute'
+	kwargs['searchType']= 'image'
+	kwargs['imgSize'] 	= 'xxlarge'
+	kwargs['num'] 		= 10
+	kwargs['rights'] 	= 'cc_attribute'
 
 	url 		= "https://www.googleapis.com/customsearch/v1?key=" + apiconfig.GOOGLE_API_KEY
 	response 	= requests.get(url, params=kwargs)
-	return response.json
+	return response.json()
+	
