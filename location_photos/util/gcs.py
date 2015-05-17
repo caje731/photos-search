@@ -54,7 +54,6 @@ def search(q=None, **kwargs):
 	kwargs['cx']	= apiconfig.GOOGLE_CSE_ID
 	kwargs['searchType']= 'image'
 	kwargs['imgSize'] 	= 'xxlarge'
-	kwargs['num'] 		= 10
 	kwargs['rights'] 	= 'cc_attribute'
 
 	url 		= "https://www.googleapis.com/customsearch/v1?key=" + apiconfig.GOOGLE_API_KEY

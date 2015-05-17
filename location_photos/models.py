@@ -7,7 +7,7 @@ from django.db import models
 class Location(models.Model):
 
 	LOCATION_TYPE_CHOICES = [
-								(1, 'Restaurant / Eatery'),
+								(1, 'Restaurant / Pub'),
 								(2, 'Monument / Tourist Place')
 							]
 
@@ -54,5 +54,7 @@ class Photo(models.Model):
 	created_at	=	models.DateTimeField(auto_now_add=True) 
 	updated_at	=	models.DateTimeField(auto_now=True)
 
+	def __unicode__(self):
+		return self.location.name
 
 # =====================================================================================================

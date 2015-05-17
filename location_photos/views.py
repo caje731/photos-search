@@ -4,7 +4,7 @@ from django.http import JsonResponse, StreamingHttpResponse
 from django.db.models import Count
 
 from location_photos.models import Location, Photo
-from util import gcs
+from util import gcs, foursquare, apiconfig
 
 import time, json
 
@@ -67,29 +67,56 @@ def stream_response_generator():
 
     for location in locations:
     	full_name 	= location.name + ' ' + location.city + ' ' + location.country
-    	response 	= gcs.search(q=full_name)
     	added_count = 0
     	failed_count= 0
 
-    	for item in response['items']:
-    		link 	= 	item['link']
-    		title 	=  	item['title']
-    		dplink	=	item['displayLink']
-    		height	=	item['image']['height']
-    		width	=	item['image']['width']
-    		size 	= 	item['image']['byteSize']
+    	print location.loc_type
+    	# Search venue images on foursquare
+    	if location.loc_type ==1:
+    		limit = 10 			# For restaurants/pubs, depend solely on foursquare (for the quota of 10 images)
+    	else:
+    		limit = 5 			# For all other types, mix results from foursquare and google
 
-    		photo   =  Photo(link=link, attribution=dplink, title=title, location=location, height=height, width=width, bytes=size)
-    		try:
-    			photo.save()
-    			added_count +=1
+    	response = foursquare.search(id = location.foursquare_id, limit=limit)
+    	if response['response']['photos']['count'] > 0:
+    		for item in response['response']['photos']['items']:
+    			height 	= item['height']
+    			width	= item['width']
+    			link 	= item['prefix'] + 'original'+item['suffix']
+    			attrib  = "https://foursquare.com/v/%s?ref=%s" % (location.foursquare_id, apiconfig.FOURSQUARE_APP_CLIENT_ID)
+    			title   = '' # I'm undecided on what title to use, for photos from foursquare
 
-    		except IntegrityException, e:
-    			failed_count+=1
+    			if height>=600 or width>=600:
+    				photo   =  Photo(link=link, attribution=attrib, title=title, location=location, height=height, width=width)
+	    			try:
+	    				photo.save()
+	    				added_count +=1
 
-    	yield "|<p>ID:%s %s " % (location.id, location.name)
-    	yield "<span class='text-success'>Added :%s</span> <span class='text-warning'>Failed :%s</span></p>" % (added_count, failed_count)
-    	#yield " "  * 1024 # Encourage browser to render incrementally
+	    			except IntegrityException, e:
+	    				failed_count+=1
+
+    	# If location is not a restaurant/pub, search images on Google also
+    	if location.loc_type != 1:
+	    	response 	= gcs.search(q=full_name, num=(10-added_count))
+	    	for item in response['items']:
+	    		link 	= 	item['link']
+	    		title 	=  	item['title']
+	    		dplink	=	item['displayLink']
+	    		height	=	item['image']['height']
+	    		width	=	item['image']['width']
+	    		size 	= 	item['image']['byteSize']
+
+	    		photo   =  Photo(link=link, attribution=dplink, title=title, location=location, height=height, width=width, bytes=size)
+	    		try:
+	    			photo.save()
+	    			added_count +=1
+
+	    		except IntegrityException, e:
+	    			failed_count+=1
+
+    	yield "|<p>ID:%s %s \n" % (location.id, location.name)
+    	yield "<span class='text-success'>Added :%s</span> <span class='text-warning'>Failed :%s</span></p>\n" % (added_count, failed_count)
+    	yield " "  * 1024 # Encourage browser to render incrementally
 
 
     	
