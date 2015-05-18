@@ -9,7 +9,3 @@ class GoogleSearchTestCase(TestCase):
 	def test_can_search_without_query(self):
 		""" The Google search fails without the query param """
 		self.assertRaises(Exception, gcs.search())
-
-	def test_can_search_with_query(self):
-		""" The Google search returns results when a query is specified """
-		print gcs.search(q="Santorini, Greece")
